@@ -1,11 +1,14 @@
 {
   "name": "bun-sqlite-watcher",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A high-performance SQLite change watcher with type-safe events for Bun",
   "module": "index.ts",
   "type": "module",
   "files": [
-    "src",
+    "index.ts",
+    "watcher.ts",
+    "types.ts",
+    "utils/",
     "README.md",
     "LICENSE"
   ],
