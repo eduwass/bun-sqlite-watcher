@@ -1,0 +1,34 @@
+{
+  "name": "bun-sqlite-watcher",
+  "version": "1.0.0",
+  "description": "A high-performance SQLite change watcher with type-safe events for Bun",
+  "module": "index.ts",
+  "type": "module",
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "bun test"
+  },
+  "keywords": [
+    "sqlite",
+    "watcher",
+    "database",
+    "events",
+    "bun"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "bun-types": "^1.0.0"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  }
+} 
