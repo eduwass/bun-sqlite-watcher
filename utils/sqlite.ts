@@ -54,10 +54,25 @@ export function createTriggers(db: Database, tableName: string) {
   }
 
   // Get table columns for proper change tracking
-  const tableInfo = db.query(`PRAGMA table_info(${tableName})`).all();
+  const tableInfo = db.query(`PRAGMA table_info(${tableName})`).all() as Array<{
+    cid: number;
+    name: string;
+    type: string;
+    notnull: number;
+    dflt_value: any;
+    pk: number;
+  }>;
+  
   if (tableInfo.length === 0) {
     throw new Error(`Table '${tableName}' does not exist`);
   }
+
+  // Find the primary key column
+  const pkColumn = tableInfo.find(col => col.pk === 1);
+  const pkColumnName = pkColumn ? pkColumn.name : 'rowid';
+
+  // Build dynamic JSON object for all columns
+  const columnPairs = tableInfo.map(col => `'${col.name}', new.${col.name}`).join(', ');
 
   // Create INSERT trigger
   db.run(`
@@ -71,18 +86,13 @@ export function createTriggers(db: Database, tableName: string) {
         changed_data, 
         timestamp
       )
-      SELECT 
+      VALUES (
         '${tableName}',
         'INSERT',
-        new.rowid,
-        json_object(
-          'id', new.rowid,
-          'title', new.title,
-          'completed', new.completed,
-          'created_at', new.created_at,
-          'updated_at', new.updated_at
-        ),
-        unixepoch();
+        new.${pkColumnName},
+        json_object(${columnPairs}),
+        unixepoch()
+      );
     END;
   `);
 
@@ -98,22 +108,19 @@ export function createTriggers(db: Database, tableName: string) {
         changed_data, 
         timestamp
       )
-      SELECT 
+      VALUES (
         '${tableName}',
         'UPDATE',
-        old.rowid,
-        json_object(
-          'id', old.rowid,
-          'title', new.title,
-          'completed', new.completed,
-          'created_at', new.created_at,
-          'updated_at', new.updated_at
-        ),
-        unixepoch();
+        new.${pkColumnName},
+        json_object(${columnPairs}),
+        unixepoch()
+      );
     END;
   `);
 
-  // Create DELETE trigger
+  // Create DELETE trigger - use old values for delete
+  const oldColumnPairs = tableInfo.map(col => `'${col.name}', old.${col.name}`).join(', ');
+  
   db.run(`
     CREATE TRIGGER _sqlite_watcher_${tableName}_delete 
     AFTER DELETE ON ${tableName}
@@ -125,18 +132,13 @@ export function createTriggers(db: Database, tableName: string) {
         changed_data, 
         timestamp
       )
-      SELECT 
+      VALUES (
         '${tableName}',
         'DELETE',
-        old.rowid,
-        json_object(
-          'id', old.rowid,
-          'title', old.title,
-          'completed', old.completed,
-          'created_at', old.created_at,
-          'updated_at', old.updated_at
-        ),
-        unixepoch();
+        old.${pkColumnName},
+        json_object(${oldColumnPairs}),
+        unixepoch()
+      );
     END;
   `);
 }
